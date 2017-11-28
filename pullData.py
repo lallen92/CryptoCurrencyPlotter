@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import requests, logging, datetime
+import requests, logging, datetime, threading, time
 from dbConnector import MySQLConnector
 
 '''
@@ -29,52 +29,71 @@ def dbCommit(table, fieldList, valueList):
     dbConn.writeToDB(table=table, fieldList=fieldList, valueList=valueList)
 
 
-def main():
+def pullData(stop_event):
     """
-        main() - Gets the values from 'www.bitstamp.net', extracts them from the returned dictionary and writes them to a database
+        pullData() - Gets the values from 'www.bitstamp.net', extracts them from the returned dictionary and writes them to a database
+                     This in emcompassed in a seperate thread to the main program so that it can constantly pull data and write it to
+                     the database while the program is contiuning to carry out its tasks
         Parameters:
-            - None
+            - stop_event: This can be used to cleanly terminate the child thread if its needs to be done before the parent is terminated
         Returns:
             - None
     """
     logger = logging.getLogger(__name__)
 
+    # List of current formats supported
     currencyList = ['https://www.bitstamp.net/api/v2/ticker_hour/btceur', 'https://www.bitstamp.net/api/v2/ticker_hour/btcusd',
                     'https://www.bitstamp.net/api/v2/ticker_hour/ethusd', 'https://www.bitstamp.net/api/v2/ticker_hour/etheur']
 
-    for currency in currencyList:
-        res = requests.get(currency)
-        try:
-            res.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            # Not 200
-            logger.error(str(e))
-            continue
+    # Loop until told otherwise!
+    while not stop_event.is_set():
+        for currency in currencyList:
+            res = requests.get(currency)
+            try:
+                res.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                # Not 200
+                logger.error(str(e))
+                continue
 
-        currencyType = (currency.rpartition('/')[-1])
-        logger.info('The Curreny type: ' + currencyType)
+            # Get the end characters to dertermine the type e.g. btceur, ethusd, etc...
+            currencyType = (currency.rpartition('/')[-1])
+            logger.info('The Curreny type: ' + currencyType)
 
-        if currencyType == 'btceur':
-            table = 'btceur'
-        elif currencyType == 'btcusd':
-            table = 'btcusd'
-        elif currencyType == 'ethusd':
-            table = 'ethusd'
-        elif currencyType == 'etheur':
-            table = 'etheur'
-        else:
-            table = None
+            if currencyType == 'btceur':
+                table = 'btceur'
+            elif currencyType == 'btcusd':
+                table = 'btcusd'
+            elif currencyType == 'ethusd':
+                table = 'ethusd'
+            elif currencyType == 'etheur':
+                table = 'etheur'
+            else:
+                table = None
 
-        # Extract Data and Fields
-        data = res.json()
-        fieldList = data.keys()
-        logger.info(fieldList)
-        valueList = data.values()
-        logger.info(valueList)
+            # Extract Data and Fields
+            data = res.json()
+            fieldList = data.keys()
+            logger.info(fieldList)
+            valueList = data.values()
+            logger.info(valueList)
 
-        # Write to DB
-        dbCommit(table, fieldList, valueList)
+            # Write to DB
+            dbCommit(table, fieldList, valueList)
 
+        # Cannot make more than 600 requests per 10 minutes or they will ban your IP address.
+        # Will in time get real time using their websocket API.
+        time.sleep(5)
+
+def main():
+    # Start the thread
+    stop_event= threading.Event()
+    thread = threading.Thread(target=pullData, args=(stop_event,))
+    thread.daemon = True                            # Daemonize thread
+    thread.start()                                  # Start the execution
+
+    # Do stuff here!
+    # stop_event.set()
 
 if __name__ == "__main__":
     # Configure the logger

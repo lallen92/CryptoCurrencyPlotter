@@ -80,6 +80,8 @@ class MySQLConnector(object):
         db = self.getConnection()
         query = "INSERT INTO `%s` (`%s`) VALUES (\"%s\");" % (
             table, "`, `".join([str(x) for x in fieldList]), "\", \"".join([str(x) for x in valueList]))
+
+        logger.info("The query being commited: %s" % query)
         cur = db.cursor()
 
         # Execute the SQL command
@@ -95,6 +97,33 @@ class MySQLConnector(object):
             logger.error("Write failed. Query: %s" % query)
 
         db.close()
+
+
+    def readFromDB(self, fieldList, table):
+        '''
+		    readFromDB() - reads from the specified table the columns (specified by fieldlist), filtering by the condition, order and limit
+		 	        	   when supplied
+
+		    Parameters:
+			    - table: A string containing the name of the table in the database
+			    - fieldlist: A list of strings containing the column names to read in the database table
+		    Returns:
+			    - results: a tuple of tuples (get that!) or 2D array of results, representing rows in the database that match your query
+        '''
+        logger = logging.getLogger(__name__)
+
+        query = "SELECT `%s` FROM `%s`" % ("`, `".join(fieldList), table)
+        logger.info("The query being read: %s" % query)
+
+        db = self.getConnection()
+        cur = db.cursor()
+        cur.execute(query)
+
+        results = cur.fetchall()
+
+        db.close()
+
+        return results
 
     def close(self):
         '''

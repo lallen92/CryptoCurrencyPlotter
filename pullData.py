@@ -2,6 +2,7 @@
 
 import requests, logging, datetime, threading, time
 from dbConnector import MySQLConnector
+from GraphPlotter import Graph
 
 '''
 	Supported values for currency_pair: btcusd, btceur, eurusd, 
@@ -40,6 +41,9 @@ def pullData(stop_event):
             - None
     """
     logger = logging.getLogger(__name__)
+
+    dbConn = None
+    dbConn = MySQLConnector()
 
     # List of current formats supported
     currencyList = ['https://www.bitstamp.net/api/v2/ticker_hour/btceur', 'https://www.bitstamp.net/api/v2/ticker_hour/btcusd',
@@ -80,11 +84,9 @@ def pullData(stop_event):
 
             # Write to DB
             dbCommit(table, fieldList, valueList)
-
         # Cannot make more than 600 requests per 10 minutes or they will ban your IP address.
         # Will in time get real time using their websocket API.
         time.sleep(5)
-
 def main():
     # Start the thread
     stop_event= threading.Event()
@@ -92,7 +94,15 @@ def main():
     thread.daemon = True                            # Daemonize thread
     thread.start()                                  # Start the execution
 
-    # Do stuff here!
+
+    db_read = MySQLConnector()
+
+    field = "high,timestamp".split(",")
+    data_list = db_read.readFromDB(table="btceur", fieldList=field)
+    btceur_high, btceur_timestamp = zip(*data_list)
+
+    plotter = Graph()
+    plotter.firstPlot(btceur_high, btceur_timestamp)
     # stop_event.set()
 
 if __name__ == "__main__":

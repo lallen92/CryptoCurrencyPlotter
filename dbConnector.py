@@ -120,7 +120,6 @@ class MySQLConnector(object):
         cur.execute(query)
 
         results = cur.fetchall()
-
         db.close()
 
         return results

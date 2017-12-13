@@ -2,6 +2,7 @@ import logging, datetime, threading
 from dbConnector import MySQLConnector
 from pullData import pull_data
 from common import CommonClass
+from GraphPlotter import Graph
 
 
 def main():
@@ -17,7 +18,13 @@ def main():
     field = "high,timestamp".split(",")
     data_list = db_read.readFromDB(table="btceur", fieldList=field)
 
-    days_data.seven_days(data_list)
+    # Set the days to 7
+    days = 7
+    # The zip() function returns an iterator of tuples based on the iterable object.
+    btceur_high, btceur_timestamp = zip(*days_data.seven_days(data_list, days))
+
+    plotter = Graph()
+    plotter.firstPlot(btceur_high, btceur_timestamp)
 
     # stop_event.set()
 

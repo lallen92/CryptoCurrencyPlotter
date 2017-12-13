@@ -9,7 +9,7 @@ class Graph(object):
         fig, ax = plt.subplots()
         # Convert to the correct format for matplotlib.
         # mdate.epoch2num converts epoch timestamps to the right format for matplotlib
-        # x = mdate.epoch2num(btceur_timestamp)
+        #x = mdate.epoch2num(btceur_timestamp)
 
         # Choose your xtick format string
         date_fmt = '%d'

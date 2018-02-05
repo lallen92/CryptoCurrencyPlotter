@@ -8,7 +8,7 @@ from GraphPlotter import Graph
 '''
 class CommonClass(object):
 
-    def seven_days(self, data_list, days):
+    def length_of_data(self, data_list, days):
         """
             seven_days() - Gets the past 7 days worth of data.
 
@@ -30,23 +30,27 @@ class CommonClass(object):
         orig = datetime.datetime.fromtimestamp(btceur_timestamp[-1])
         # Get a date 7 days from the current date
         one_week = orig - datetime.timedelta(days=days)
-
         # Loop backwards through the timestamps getting the past 7 days worth
+
         for I in reversed(btceur_timestamp):
             converted_timestamp_value = (datetime.datetime.fromtimestamp(I))
-            if one_week < converted_timestamp_value < orig:
+            if one_week > converted_timestamp_value < orig:
                 one_week_list_timezone.append(converted_timestamp_value)
             else:
-                # Get the corresponding data to each time stamp
-                for x in reversed(btceur_high):
-                    if count < len(one_week_list_timezone):
-                        one_week_list_btc_high.append(x)
-                        count += 1
+                continue
+        if one_week_list_timezone[-1] \
+                > one_week:
+            return None
+        else:
+            # Get the corresponding data to each time stamp
+            for x in reversed(btceur_high):
+                if count < len(one_week_list_timezone):
+                    one_week_list_btc_high.append(x)
+                    count += 1
 
-        # Reorder both lists of data
-        one_week_list_btc_high.reverse()
-        one_week_list_timezone.reverse()
-
-        zipped = zip(one_week_list_btc_high, one_week_list_timezone)
-        return list(zipped)
+            # Reorder both lists of data
+            one_week_list_btc_high.reverse()
+            one_week_list_timezone.reverse()
+            zipped = zip(one_week_list_btc_high, one_week_list_timezone)
+            return list(zipped)
 

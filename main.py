@@ -7,7 +7,7 @@ from GraphPlotter import Graph
 
 def main():
     # Start the thread, this is responsible for getting data and posting to db
-    stop_event= threading.Event()
+    stop_event = threading.Event()
     thread = threading.Thread(target=pull_data, args=(stop_event,))
     thread.daemon = True                            # Daemonize thread
     thread.start()                                  # Start the execution
@@ -20,11 +20,18 @@ def main():
 
     # Set the days to 7
     days = 7
-    # The zip() function returns an iterator of tuples based on the iterable object.
-    btceur_high, btceur_timestamp = zip(*days_data.seven_days(data_list, days))
 
-    plotter = Graph()
-    plotter.firstPlot(btceur_high, btceur_timestamp)
+    # The zip() function returns an iterator of tuples based on the iterable object.
+    returned_data = days_data.length_of_data(data_list, days)
+    if returned_data is None:
+        print("We do not have 7 days worth of data!")
+    else:
+        btceur_high, btceur_timestamp = zip(*returned_data)
+
+        #btceur_high, btceur_timestamp = zip(*days_data.seven_days(data_list, days))
+
+        plotter = Graph()
+        plotter.firstPlot(btceur_high, btceur_timestamp)
 
     # stop_event.set()
 
